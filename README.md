@@ -4,8 +4,8 @@
 **Note:**
 > - Version de python 2.7
 
-
-  1. instalar requirements.txt
+Para provarlos
+  1. Instalar requirements.txt
   2. Ejecutar los scripts individualmente
   ```sh
     cd apps/collection/scripts
