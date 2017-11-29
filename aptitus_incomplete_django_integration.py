@@ -3,9 +3,22 @@ import mechanize
 # from IPython.core.display import HTML
 import sys
 from bs4 import BeautifulSoup
-import json
+import os
+import logging
+import django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "main.settings")
+django.setup()
+
+from apps.collection.models.palabra_clave import Palabra_clave
+from apps.collection.models.data_red_social import Data_red_social
+from apps.collection.models.consulta import Consulta
+from apps.collection.models.carrera import Carrera
+from apps.collection.models.red_social import Red_social
 reload(sys)
 sys.setdefaultencoding('utf-8')
+logger = logging.getLogger("mechanize")
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.setLevel(logging.DEBUG)
 
 
 def main():
@@ -15,21 +28,28 @@ def main():
     browser.set_handle_refresh(False)
     browser.addheaders = [('User-agent', 'Firefox')]
     # =============================================
-    key = "Ingeniero de sistemas"
-    # =============================================
-    browser.open(
-        "https://aptitus.com/buscar-trabajo-en-peru?q=" + key.replace(' ', '-')
-    )
-    # https://aptitus.com/buscar-trabajo-en-peru/de-tecnologia-sistemas-y-telecomunicaciones
+    carrera = Carrera.objects.all().first()
+    palabras_clave = Palabra_clave.objects.filter(carrera=carrera)
 
-    jobLinks = get_links_pages(browser)
-    print "=================="
-    print "Links:", len(jobLinks)
-    data = get_data(browser, jobLinks)
-    print "Datos:", len(data)
-    print "=================="
-    # with open('datasets/aptitus', 'w') as fout:
-    #     json.dump(data, fout)
+    # https://aptitus.com/buscar-trabajo-en-peru/de-tecnologia-sistemas-y-telecomunicaciones
+# coding: utf-8
+
+    # print "##################"
+    # for p in palabras_clave:
+    #     # =============================================
+    #     browser.open(
+    #         "https://aptitus.com/buscar-trabajo-en-peru?q=" +
+    #         p.nombre.replace(' ', '-')
+    #     )
+    #     jobLinks = get_links_pages(browser)
+    #     print "=================="
+    #     print "Links:", len(jobLinks)
+    #     data = get_data(browser, jobLinks)
+    #     Data_red_social.bulk_create(data)
+    #     print "Datos:", len(data)
+    #     print "=================="
+    # red_social = Red_social.get(nombre="Aptitus")
+    # Consulta.create(descripcion="Primera Consulta", red_social=red_social)
 
 
 def get_links_pages(browser):
@@ -76,20 +96,22 @@ def get_data(browser, jobLinks):
             text='Este aviso ha finalizado, puedes ver otros avisos similares'
         ):
             data.append(
-                dict(
+                Data_red_social(
                     url=j.url,
-                    company=soup.select('a.b-job-detail_subtitle')[0].string,
-                    title=soup.select('h1.b-job-detail_title')[0].string,
-                    location=soup.body.find(
+                    titulo=soup.select('h1.b-job-detail_title')[0].string,
+                    institucion=soup.select(
+                        'a.b-job-detail_subtitle')[0].string,
+                    lugar=soup.body.find(
                         text='Ubicación').parent.next_sibling.string,
-                    description=soup.select('.b-job-info')[0].get_text(),
-                    html=str(soup.select('.b-job-info')[0]),
-                    date=soup.body.find(
+                    descripcion_empleo=soup.select(
+                        '.b-job-info')[0].get_text(),
+                    descripcion_empleo_html=str(soup.select('.b-job-info')[0]),
+                    fecha=soup.body.find(
                         text='Publicado').parent.next_sibling.string,
-                    area=soup.body.find(text='Área').parent.next_sibling.string
+                    sector=soup.body.find(
+                        text='Área').parent.next_sibling.string
                 )
             )
     return data
-
 if __name__ == "__main__":
     main()

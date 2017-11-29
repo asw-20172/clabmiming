@@ -4,6 +4,8 @@ import sys
 import mechanize
 # from IPython.core.display import HTML
 from bs4 import BeautifulSoup
+import json
+
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -29,6 +31,8 @@ def main():
     print "Links:", len(jobLinks)
     data = get_data(browser, jobLinks)
     print "Datos:", len(data)
+    # with open('datasets/aptitus', 'w') as fout:
+    #     json.dump(data, fout)
     print "=================="
 
 
@@ -88,5 +92,5 @@ def get_data(browser, jobLinks):
     return data
 
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
