@@ -1,0 +1,9 @@
+venv
+*.pyc
+.env
+*.log
+*.pot
+__pycache__/
+.idea/*
+.coverage
+reports/*
