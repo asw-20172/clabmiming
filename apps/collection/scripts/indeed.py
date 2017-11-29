@@ -88,5 +88,5 @@ def get_data(browser, jobLinks):
     return data
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
