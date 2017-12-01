@@ -1,8 +1,20 @@
 # clabmiming
 
-## Scraping(Estan sin integrar al proyecto aun)
-Version de python 2.7
-instalar requirements.txt
-cd clabmining/apps/collection/scripts
-python aptitus.py
-python indeeed.py
+## Scraping(Sin integrar al proyecto...)
+**Note:**
+> - Version de python 2.7
+
+Para provarlos
+  1. Instalar requirements.txt
+  2. Ejecutar los scripts individualmente
+  ```sh
+    cd apps/collection/scripts
+    python aptitus.py
+    python indeeed.py
+  ```
+  ## Tests
+  ```
+    coverage run manage.py test
+    coverage report
+    python manage.py jenkins --enable-coverage
+  ```
