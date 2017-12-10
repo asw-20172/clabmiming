@@ -1,96 +1,102 @@
 # coding: utf-8
-import sys
 
 import mechanize
-# from IPython.core.display import HTML
 from bs4 import BeautifulSoup
 import json
 
-
-reload(sys)
-sys.setdefaultencoding('utf-8')
-
-
-def main():
-    browser = mechanize.Browser()
-    browser.set_handle_robots(False)
-    browser.set_handle_referer(False)
-    browser.set_handle_refresh(False)
-    browser.addheaders = [('User-agent', 'Firefox')]
-    browser.open("https://www.indeed.com.pe/")
-    browser.select_form(nr=0)
-    # ===============================================
-    browser.form['q'] = "Ingeniero de sistemas"
-    browser.form['l'] = "Lima"
-    # ===============================================
-    browser.submit()
-    print browser.geturl()
-    # search_url = browser.geturl()
-    jobLinks = get_links_pages(browser)
-    print "=================="
-    print "Links:", len(jobLinks)
-    data = get_data(browser, jobLinks)
-    print "Datos:", len(data)
-    # with open('datasets/aptitus', 'w') as fout:
-    #     json.dump(data, fout)
-    print "=================="
+# import sys
+# import logging
+# from IPython.core.display import HTML
+# reload(sys)
+# sys.setdefaultencoding('utf-8')
+# logger = logging.getLogger("mechanize")
+# logger.addHandler(logging.StreamHandler(sys.stdout))
+# logger.setLevel(logging.DEBUG)
 
 
-def get_links_pages(browser):
-    jobLinks = [
-        jobLink
-        for jobLink in browser.links()
-        if jobLink.url.startswith("/company/")  # or
-        # jobLink.url.startswith("/rc/")
-    ]
-    for link in browser.links():
-        if link.text.isdigit():
-            browser.follow_link(link)
-            jobLinks += [
-                jobLink for jobLink in browser.links()
-                if jobLink.url.startswith("/company/")  # or
-                # jobLink.url.startswith("/rc/")
-            ]
-    jobLinks = jobLinks + get_links_sig(browser)
-    return jobLinks
+class Indeed(object):
 
+    def __init__(self):
+        self.browser = mechanize.Browser()
+        self.browser.set_handle_robots(False)
+        self.browser.set_handle_referer(False)
+        self.browser.set_handle_refresh(False)
+        self.browser.addheaders = [('User-agent', 'Firefox')]
 
-def get_links_sig(browser):
-    jobLinks = []
-    link_sig = [l for l in browser.links() if l.text == u'Siguiente\xa0\xbb']
-    for link in link_sig:
-        browser.follow_link(link)
-        jobLinks += [
-            jobLink for jobLink in browser.links()
+    def search(self, key_word, location):
+        self.browser.open("https://www.indeed.com.pe/")
+        self.browser.select_form(nr=0)
+        self.browser.form['q'] = key_word
+        self.browser.form['l'] = location
+        self.browser.submit()
+        print "=================="
+        print self.browser.geturl()
+        print "=================="
+        self.__get_links_pages()
+        print "Links: ", len(self.jobLinks)
+        self.__get_data()
+        print "Datos: ", len(self.data)
+        print "=================="
+
+    def export_to_csv(self, filename):
+        with open(filename, 'w') as fout:
+            json.dump(self.data, fout)
+
+    def __get_links_pages(self):
+        self.jobLinks = [
+            jobLink
+            for jobLink in self.browser.links()
             if jobLink.url.startswith("/company/")  # or
             # jobLink.url.startswith("/rc/")
         ]
-    if link_sig:
-        jobLinks += get_links_sig(browser)
-    return jobLinks
+        for link in self.browser.links():
+            if link.text.isdigit():
+                self.browser.follow_link(link)
+                self.jobLinks += [
+                    jobLink for jobLink in self.browser.links()
+                    if jobLink.url.startswith("/company/")  # or
+                    # jobLink.url.startswith("/rc/")
+                ]
+        self.jobLinks = self.jobLinks + self.__get_links_sig()
 
+    def __get_links_sig(self):
+        jobLinksTemp = []
+        link_sig = [l for l in self.browser.links() if l.text ==
+                    u'Siguiente\xa0\xbb']
+        for link in link_sig:
+            self.browser.follow_link(link)
+            jobLinksTemp += [
+                jobLink for jobLink in self.browser.links()
+                if jobLink.url.startswith("/company/")  # or
+                # jobLink.url.startswith("/rc/")
+            ]
+        if link_sig:
+            jobLinksTemp += self.__get_links_sig()
+        return jobLinksTemp
 
-def get_data(browser, jobLinks):
-    data = []
-    for jobLink in jobLinks:
-        print jobLink.url
-        browser.follow_link(jobLink)
-        if browser.geturl().startswith("https://www.indeed.com.pe"):
-            soup = BeautifulSoup(browser.response().read(), "html.parser")
-            div_header = soup.select('div[data-tn-component=jobHeader]')[0]
-            data.append(
-                dict(
-                    url=jobLink.url,
-                    company=div_header.select('.company')[0].string,
-                    title=div_header.select('.jobtitle')[0].string,
-                    location=div_header.select('.location')[0].string,
-                    description=soup.find(id='job_summary').get_text(),
-                    html=str(soup.find(id='job_summary')),
-                    date=soup.select('.result-link-bar .date')[0].string
+    def __get_data(self):
+        self.data = []
+        for jobLink in self.jobLinks:
+            print jobLink.url
+            self.browser.follow_link(jobLink)
+            if self.browser.geturl().startswith("https://www.indeed.com.pe"):
+                soup = BeautifulSoup(
+                    self.browser.response().read(), "html.parser")
+                div_header = soup.select('div[data-tn-component=jobHeader]')[0]
+                self.data.append(
+                    dict(
+                        url=jobLink.url,
+                        company=div_header.select('.company')[0].string,
+                        title=div_header.select('.jobtitle')[0].string,
+                        location=div_header.select('.location')[0].string,
+                        description=soup.find(id='job_summary').get_text(),
+                        html=str(soup.find(id='job_summary')),
+                        date=soup.select('.result-link-bar .date')[0].string
+                    )
                 )
-            )
-    return data
 
 
 if __name__ == "__main__":
-    main()
+    indeedd = Indeed()
+    indeedd.search("Ingeniero de sistemas", "Lima")
+    indeedd.export_to_csv("datasets/indeedd")
