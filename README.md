@@ -2,9 +2,9 @@
 
 ## Scraping(Sin integrar al proyecto...)
 **Note:**
-> - Version de python 2.7
+> - Version de python = 2.7
 
-Para provarlos
+Para probarlos
   1. Instalar requirements.txt
   2. Ejecutar los scripts individualmente
   ```sh
